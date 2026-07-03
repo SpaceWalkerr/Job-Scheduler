@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 740" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif">
+  <rect width="980" height="740" fill="#ffffff"/>
+  <text x="490" y="38" text-anchor="middle" font-size="22" font-weight="700" fill="#1f2430">Entity–Relationship Diagram</text>
+
+  <!-- relationship lines (drawn first, behind boxes) -->
+  <g stroke="#9aa4b2" stroke-width="2" fill="none">
+    <line x1="150" y1="180" x2="150" y2="230"/>   <!-- users -> projects -->
+    <line x1="150" y1="330" x2="150" y2="380"/>   <!-- projects -> queues -->
+    <line x1="260" y1="450" x2="370" y2="270"/>   <!-- queues -> jobs -->
+    <line x1="640" y1="250" x2="700" y2="210"/>   <!-- jobs -> job_executions -->
+    <line x1="500" y1="470" x2="500" y2="520"/>   <!-- jobs -> dead_letter_jobs -->
+    <line x1="770" y1="400" x2="640" y2="360"/>   <!-- workers -> jobs (worker_id) -->
+    <line x1="800" y1="400" x2="800" y2="290"/>   <!-- workers -> job_executions -->
+  </g>
+  <g font-size="12" fill="#4f8cff" font-weight="700">
+    <text x="135" y="208">1</text><text x="135" y="228">∞</text>
+    <text x="135" y="358">1</text><text x="135" y="378">∞</text>
+    <text x="255" y="440">1</text><text x="360" y="285">∞</text>
+    <text x="648" y="248">1</text><text x="690" y="222">∞</text>
+    <text x="485" y="468">1</text><text x="485" y="518">∞</text>
+    <text x="762" y="398">1</text><text x="628" y="372">∞</text>
+    <text x="785" y="398">1</text><text x="785" y="300">∞</text>
+  </g>
+
+  <!-- users -->
+  <g>
+    <rect x="40" y="60" width="220" height="120" rx="8" fill="#ffffff" stroke="#c7ccd6"/>
+    <rect x="40" y="60" width="220" height="26" rx="8" fill="#eef3ff"/>
+    <text x="52" y="78" font-size="14" font-weight="700" fill="#1f2430">users</text>
+    <text x="52" y="106" font-size="12" fill="#1f2430"><tspan fill="#d29922" font-weight="700">PK</tspan>  id</text>
+    <text x="52" y="126" font-size="12" fill="#1f2430">email (unique)</text>
+    <text x="52" y="146" font-size="12" fill="#1f2430">password_hash</text>
+    <text x="52" y="166" font-size="12" fill="#1f2430">created_at</text>
+  </g>
+
+  <!-- projects -->
+  <g>
+    <rect x="40" y="210" width="220" height="120" rx="8" fill="#ffffff" stroke="#c7ccd6"/>
+    <rect x="40" y="210" width="220" height="26" rx="8" fill="#eef3ff"/>
+    <text x="52" y="228" font-size="14" font-weight="700" fill="#1f2430">projects</text>
+    <text x="52" y="256" font-size="12" fill="#1f2430"><tspan fill="#d29922" font-weight="700">PK</tspan>  id</text>
+    <text x="52" y="276" font-size="12" fill="#1f2430"><tspan fill="#4f8cff" font-weight="700">FK</tspan>  user_id</text>
+    <text x="52" y="296" font-size="12" fill="#1f2430">name</text>
+    <text x="52" y="316" font-size="12" fill="#1f2430">created_at</text>
+  </g>
+
+  <!-- queues -->
+  <g>
+    <rect x="40" y="380" width="220" height="176" rx="8" fill="#ffffff" stroke="#c7ccd6"/>
+    <rect x="40" y="380" width="220" height="26" rx="8" fill="#eef3ff"/>
+    <text x="52" y="398" font-size="14" font-weight="700" fill="#1f2430">queues</text>
+    <text x="52" y="426" font-size="12" fill="#1f2430"><tspan fill="#d29922" font-weight="700">PK</tspan>  id</text>
+    <text x="52" y="446" font-size="12" fill="#1f2430"><tspan fill="#4f8cff" font-weight="700">FK</tspan>  project_id</text>
+    <text x="52" y="466" font-size="12" fill="#1f2430">name</text>
+    <text x="52" y="486" font-size="12" fill="#1f2430">concurrency_limit</text>
+    <text x="52" y="506" font-size="12" fill="#1f2430">retry_strategy</text>
+    <text x="52" y="526" font-size="12" fill="#1f2430">max_attempts</text>
+    <text x="52" y="546" font-size="12" fill="#1f2430">is_paused</text>
+  </g>
+
+  <!-- jobs -->
+  <g>
+    <rect x="370" y="120" width="270" height="330" rx="8" fill="#ffffff" stroke="#3fb950" stroke-width="2"/>
+    <rect x="370" y="120" width="270" height="26" rx="8" fill="#e9f7ef"/>
+    <text x="382" y="138" font-size="14" font-weight="700" fill="#1f2430">jobs</text>
+    <text x="382" y="166" font-size="12" fill="#1f2430"><tspan fill="#d29922" font-weight="700">PK</tspan>  id</text>
+    <text x="382" y="186" font-size="12" fill="#1f2430"><tspan fill="#4f8cff" font-weight="700">FK</tspan>  queue_id</text>
+    <text x="382" y="206" font-size="12" fill="#1f2430"><tspan fill="#4f8cff" font-weight="700">FK</tspan>  worker_id (nullable)</text>
+    <text x="382" y="226" font-size="12" fill="#1f2430">type</text>
+    <text x="382" y="246" font-size="12" fill="#1f2430">status</text>
+    <text x="382" y="266" font-size="12" fill="#1f2430">priority</text>
+    <text x="382" y="286" font-size="12" fill="#1f2430">run_at</text>
+    <text x="382" y="306" font-size="12" fill="#1f2430">cron_expr</text>
+    <text x="382" y="326" font-size="12" fill="#1f2430">attempt_count</text>
+    <text x="382" y="346" font-size="12" fill="#1f2430">max_attempts</text>
+    <text x="382" y="366" font-size="12" fill="#1f2430">last_error</text>
+    <text x="382" y="386" font-size="12" fill="#1f2430">created_at / updated_at</text>
+    <text x="382" y="420" font-size="11" fill="#6b7280">idx (queue_id, status,</text>
+    <text x="382" y="436" font-size="11" fill="#6b7280">     priority desc, run_at)</text>
+  </g>
+
+  <!-- job_executions -->
+  <g>
+    <rect x="700" y="90" width="240" height="160" rx="8" fill="#ffffff" stroke="#c7ccd6"/>
+    <rect x="700" y="90" width="240" height="26" rx="8" fill="#eef3ff"/>
+    <text x="712" y="108" font-size="14" font-weight="700" fill="#1f2430">job_executions</text>
+    <text x="712" y="136" font-size="12" fill="#1f2430"><tspan fill="#d29922" font-weight="700">PK</tspan>  id</text>
+    <text x="712" y="156" font-size="12" fill="#1f2430"><tspan fill="#4f8cff" font-weight="700">FK</tspan>  job_id</text>
+    <text x="712" y="176" font-size="12" fill="#1f2430"><tspan fill="#4f8cff" font-weight="700">FK</tspan>  worker_id</text>
+    <text x="712" y="196" font-size="12" fill="#1f2430">attempt</text>
+    <text x="712" y="216" font-size="12" fill="#1f2430">status</text>
+    <text x="712" y="236" font-size="12" fill="#1f2430">error</text>
+  </g>
+
+  <!-- workers -->
+  <g>
+    <rect x="700" y="400" width="240" height="140" rx="8" fill="#ffffff" stroke="#c7ccd6"/>
+    <rect x="700" y="400" width="240" height="26" rx="8" fill="#fff5e6"/>
+    <text x="712" y="418" font-size="14" font-weight="700" fill="#1f2430">workers</text>
+    <text x="712" y="446" font-size="12" fill="#1f2430"><tspan fill="#d29922" font-weight="700">PK</tspan>  id</text>
+    <text x="712" y="466" font-size="12" fill="#1f2430">hostname</text>
+    <text x="712" y="486" font-size="12" fill="#1f2430">pid</text>
+    <text x="712" y="506" font-size="12" fill="#1f2430">status</text>
+    <text x="712" y="526" font-size="12" fill="#1f2430">last_heartbeat_at</text>
+  </g>
+
+  <!-- dead_letter_jobs -->
+  <g>
+    <rect x="370" y="520" width="270" height="140" rx="8" fill="#ffffff" stroke="#f85149" stroke-width="2"/>
+    <rect x="370" y="520" width="270" height="26" rx="8" fill="#fdecea"/>
+    <text x="382" y="538" font-size="14" font-weight="700" fill="#1f2430">dead_letter_jobs</text>
+    <text x="382" y="566" font-size="12" fill="#1f2430"><tspan fill="#d29922" font-weight="700">PK</tspan>  id</text>
+    <text x="382" y="586" font-size="12" fill="#1f2430">original_job_id</text>
+    <text x="382" y="606" font-size="12" fill="#1f2430"><tspan fill="#4f8cff" font-weight="700">FK</tspan>  queue_id</text>
+    <text x="382" y="626" font-size="12" fill="#1f2430">failure_reason</text>
+    <text x="382" y="646" font-size="12" fill="#1f2430">attempts</text>
+  </g>
+
+  <!-- legend -->
+  <text x="40" y="700" font-size="12" fill="#6b7280"><tspan fill="#d29922" font-weight="700">PK</tspan> primary key   <tspan fill="#4f8cff" font-weight="700">FK</tspan> foreign key   1—∞ one-to-many</text>
+</svg>
