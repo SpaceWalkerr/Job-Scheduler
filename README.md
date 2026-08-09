@@ -13,13 +13,17 @@ Beyond the core requirements, this also implements:
 
 - **Workflow dependencies** — a job can require another job to `complete` before it's
   eligible to run (`depends_on_job_id`), enforced in the same atomic claim query.
+- **Fair Scheduling / Priority** — High-priority queues take precedence across the worker cluster automatically.
+- **Token Bucket Rate Limiting** — Set a strict max limit of jobs per minute on a queue, enforced atomically without blocking using PostgreSQL.
+- **Consistent Hashing / Worker Pinning** — Submit jobs with an `affinity_key` to route them predictably to the same worker process (preventing race conditions and maximizing cache hits).
+- **Recurring Jobs** — Provide a standard CRON expression to automatically spawn repeated tasks on a schedule.
 - **Distributed locking** — Postgres advisory-lock leader election so exactly one server
   instance runs the scheduler tick loop, with automatic failover if the leader dies.
 - **Role-based access control** — projects have `admin`/`viewer` members; viewers can see
   everything but every mutating endpoint is blocked for them, enforced server-side.
 - **WebSocket live updates** — a push channel notifies the dashboard of changes in under a
   second, with polling kept on as an automatic fallback if the socket drops.
-- **Rate limiting** — tiered per-IP limits (tight on `/auth`, looser elsewhere).
+- **API Rate limiting** — tiered per-IP limits (tight on `/auth`, looser elsewhere).
 - **Throughput chart** — daily completed-vs-failed executions on the Overview page.
 
 See [docs/design-decisions.md](docs/design-decisions.md) for the reasoning behind each.

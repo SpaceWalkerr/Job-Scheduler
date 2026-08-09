@@ -12,6 +12,7 @@ interface Queue {
   retry_base_delay_ms: number;
   max_attempts: number;
   is_paused: boolean;
+  rate_limit_per_minute: number | null;
 }
 
 export default function Queues({ projectId, myRole }: { projectId: string; myRole: string }) {
@@ -25,6 +26,7 @@ export default function Queues({ projectId, myRole }: { projectId: string; myRol
   const [concurrency, setConcurrency] = useState(5);
   const [strategy, setStrategy] = useState("exponential");
   const [maxAttempts, setMaxAttempts] = useState(3);
+  const [rateLimit, setRateLimit] = useState<number | "">("");
   const [editing, setEditing] = useState<Queue | null>(null);
 
   const refresh = () => setTick((t) => t + 1);
@@ -38,9 +40,11 @@ export default function Queues({ projectId, myRole }: { projectId: string; myRol
       concurrency_limit: concurrency,
       retry_strategy: strategy,
       max_attempts: maxAttempts,
+      rate_limit_per_minute: rateLimit === "" ? null : Number(rateLimit),
     });
     setName("");
     setPriority(0);
+    setRateLimit("");
     setIsCreating(false);
     refresh();
   }
@@ -60,6 +64,7 @@ export default function Queues({ projectId, myRole }: { projectId: string; myRol
       retry_strategy: editing.retry_strategy,
       retry_base_delay_ms: editing.retry_base_delay_ms,
       max_attempts: editing.max_attempts,
+      rate_limit_per_minute: editing.rate_limit_per_minute,
     });
     setEditing(null);
     refresh();
@@ -123,6 +128,17 @@ export default function Queues({ projectId, myRole }: { projectId: string; myRol
                   min={1}
                   value={editing ? editing.concurrency_limit : concurrency}
                   onChange={(e) => editing ? setEditing({ ...editing, concurrency_limit: Number(e.target.value) }) : setConcurrency(Number(e.target.value))}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm font-medium focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Rate Limit (/min)</label>
+                <input
+                  type="number"
+                  min={1}
+                  placeholder="Unlimited"
+                  value={editing ? (editing.rate_limit_per_minute || "") : rateLimit}
+                  onChange={(e) => editing ? setEditing({ ...editing, rate_limit_per_minute: e.target.value ? Number(e.target.value) : null }) : setRateLimit(e.target.value ? Number(e.target.value) : "")}
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm font-medium focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-sm"
                 />
               </div>
@@ -197,6 +213,7 @@ export default function Queues({ projectId, myRole }: { projectId: string; myRol
                 <th className="px-6 py-4">Name</th>
                 <th className="px-6 py-4">Priority</th>
                 <th className="px-6 py-4">Concurrency</th>
+                <th className="px-6 py-4">Rate Limit</th>
                 <th className="px-6 py-4">Retry Logic</th>
                 <th className="px-6 py-4">State</th>
                 {isAdmin && <th className="px-6 py-4 text-right">Actions</th>}
@@ -208,6 +225,7 @@ export default function Queues({ projectId, myRole }: { projectId: string; myRol
                   <td className="px-6 py-4 font-medium text-foreground">{q.name}</td>
                   <td className="px-6 py-4 font-mono text-muted-foreground">{q.priority}</td>
                   <td className="px-6 py-4 font-mono text-muted-foreground">{q.concurrency_limit}</td>
+                  <td className="px-6 py-4 font-mono text-muted-foreground">{q.rate_limit_per_minute || "∞"}</td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
                       <span className="font-medium text-foreground capitalize">{q.retry_strategy}</span>

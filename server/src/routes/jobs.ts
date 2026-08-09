@@ -105,9 +105,9 @@ router.post(
     const status = type === "immediate" ? "queued" : "scheduled";
     const runAt = firstRunAt(type, req.body ?? {});
     const { rows } = await query(
-      `insert into jobs (queue_id, type, payload, status, priority, run_at, cron_expr, max_attempts, depends_on_job_id)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning *`,
-      [queue_id, type, payload, status, priority, runAt, req.body?.cron_expr ?? null, maxAttempts, depends_on_job_id]
+      `insert into jobs (queue_id, type, payload, status, priority, run_at, cron_expr, max_attempts, depends_on_job_id, affinity_key)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) returning *`,
+      [queue_id, type, payload, status, priority, runAt, req.body?.cron_expr ?? null, maxAttempts, depends_on_job_id, req.body?.affinity_key ?? null]
     );
     broadcast("jobs");
     // Immediate jobs are runnable now; scheduled/delayed/recurring wait for the scheduler.

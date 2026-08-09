@@ -60,26 +60,58 @@ export async function claimJobs(workerId: string, queueId: string, limit: number
 // Claim jobs while enforcing the queue's concurrency limit as a HARD bound across all
 // workers. A per-queue advisory lock (held for the transaction) serializes the
 // "count in-flight → claim remaining slots" step, so two workers can't both read the
-// same in-flight count and each fill the queue — the overshoot that a plain count+claim
-// allows. hashtext maps the queue id to the lock key.
+// same in-flight count and each fill the queue.
 export async function claimWithConcurrencyLimit(
   workerId: string,
   queueId: string,
-  concurrencyLimit: number
+  concurrencyLimit: number,
+  rateLimitPerMinute: number | null,
+  numWorkers: number,
+  workerIndex: number
 ): Promise<Job[]> {
   const client = await pool.connect();
   try {
     await client.query("begin");
     await client.query("select pg_advisory_xact_lock(hashtext($1))", [queueId]);
+    
+    // 1. Rate Limiting: Token Bucket
+    let availableTokens = Infinity;
+    if (rateLimitPerMinute !== null) {
+      const q = await client.query<{ tokens: number, last_refill_at: Date }>(
+        "select tokens, last_refill_at from queues where id = $1", [queueId]
+      );
+      if (q.rows.length) {
+        const { tokens, last_refill_at } = q.rows[0];
+        const now = Date.now();
+        const elapsedMs = now - last_refill_at.getTime();
+        const refillRatePerMs = rateLimitPerMinute / 60000;
+        let newTokens = tokens + (elapsedMs * refillRatePerMs);
+        if (newTokens > rateLimitPerMinute) newTokens = rateLimitPerMinute;
+        
+        await client.query(
+          "update queues set tokens = $1, last_refill_at = now() where id = $2",
+          [newTokens, queueId]
+        );
+        availableTokens = Math.floor(newTokens);
+      }
+    }
+
     const inflight = await client.query<{ c: number }>(
       "select count(*)::int as c from jobs where queue_id = $1 and status in ('claimed', 'running')",
       [queueId]
     );
-    const slots = concurrencyLimit - inflight.rows[0].c;
+    let slots = concurrencyLimit - inflight.rows[0].c;
+    
+    if (rateLimitPerMinute !== null) {
+      slots = Math.min(slots, availableTokens);
+    }
+
     if (slots <= 0) {
       await client.query("commit");
       return [];
     }
+
+    // 2. Claim with Consistent Hashing support (affinity_key)
     const { rows } = await client.query<Job>(
       `update jobs set status = 'claimed', worker_id = $1, updated_at = now()
        where id in (
@@ -87,13 +119,23 @@ export async function claimWithConcurrencyLimit(
          left join jobs dep on dep.id = j.depends_on_job_id
          where j.queue_id = $2 and j.status = 'queued' and j.run_at <= now()
            and (j.depends_on_job_id is null or dep.status = 'completed')
+           and (j.affinity_key is null or abs(hashtext(j.affinity_key)) % $4 = $5)
          order by j.priority desc, j.run_at
          limit $3
          for update of j skip locked
        )
        returning id, queue_id, payload, attempt_count, max_attempts`,
-      [workerId, queueId, slots]
+      [workerId, queueId, slots, numWorkers, workerIndex]
     );
+    
+    // Deduct tokens used
+    if (rateLimitPerMinute !== null && rows.length > 0) {
+      await client.query(
+        "update queues set tokens = tokens - $1 where id = $2",
+        [rows.length, queueId]
+      );
+    }
+
     await client.query("commit");
     return rows;
   } catch (err) {
@@ -201,14 +243,31 @@ export async function startWorker() {
 
   async function poll() {
     if (!running) return;
+    
+    // 1. Get active workers for consistent hashing
+    const activeWorkers = await query<{id: string}>(
+      "select id from workers where status = 'active' order by id"
+    );
+    const numWorkers = activeWorkers.rows.length || 1;
+    const workerIndex = activeWorkers.rows.findIndex(w => w.id === workerId) >= 0 
+      ? activeWorkers.rows.findIndex(w => w.id === workerId) 
+      : 0;
+
     // Higher-priority queues are claimed first so their jobs win scarce worker
     // capacity; within a queue, jobs are still ordered by their own priority. Each
     // queue's concurrency limit is enforced atomically as a hard bound.
-    const queues = await query<{ id: string; concurrency_limit: number }>(
-      "select id, concurrency_limit from queues where is_paused = false order by priority desc, created_at"
+    const queues = await query<{ id: string; concurrency_limit: number, rate_limit_per_minute: number | null }>(
+      "select id, concurrency_limit, rate_limit_per_minute from queues where is_paused = false order by priority desc, created_at"
     );
     for (const q of queues.rows) {
-      const jobs = await claimWithConcurrencyLimit(workerId, q.id, q.concurrency_limit);
+      const jobs = await claimWithConcurrencyLimit(
+        workerId, 
+        q.id, 
+        q.concurrency_limit,
+        q.rate_limit_per_minute,
+        numWorkers,
+        workerIndex
+      );
       if (jobs.length) broadcast("jobs");
       for (const job of jobs) {
         inFlight.add(job.id);

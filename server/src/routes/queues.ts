@@ -32,7 +32,7 @@ router.get(
 router.post(
   "/",
   wrap(async (req: AuthRequest, res) => {
-    const { project_id, name, priority, concurrency_limit, retry_strategy, retry_base_delay_ms, max_attempts } =
+    const { project_id, name, priority, concurrency_limit, retry_strategy, retry_base_delay_ms, max_attempts, rate_limit_per_minute } =
       req.body ?? {};
     if (!project_id || !name) {
       return res.status(400).json({ error: "project_id and name are required" });
@@ -42,10 +42,10 @@ router.post(
     if (role !== "admin") return res.status(403).json({ error: "viewers cannot create queues" });
 
     const { rows } = await query(
-      `insert into queues (project_id, name, priority, concurrency_limit, retry_strategy, retry_base_delay_ms, max_attempts)
-       values ($1, $2, coalesce($3, 0), coalesce($4, 5), coalesce($5, 'exponential'), coalesce($6, 1000), coalesce($7, 3))
+      `insert into queues (project_id, name, priority, concurrency_limit, retry_strategy, retry_base_delay_ms, max_attempts, rate_limit_per_minute, tokens, last_refill_at)
+       values ($1, $2, coalesce($3, 0), coalesce($4, 5), coalesce($5, 'exponential'), coalesce($6, 1000), coalesce($7, 3), $8, coalesce($8, 0), now())
        returning *`,
-      [project_id, name, priority, concurrency_limit, retry_strategy, retry_base_delay_ms, max_attempts]
+      [project_id, name, priority, concurrency_limit, retry_strategy, retry_base_delay_ms, max_attempts, rate_limit_per_minute ?? null]
     );
     broadcast("queues");
     res.status(201).json(rows[0]);
@@ -60,6 +60,7 @@ const EDITABLE = [
   "retry_base_delay_ms",
   "max_attempts",
   "is_paused",
+  "rate_limit_per_minute",
 ];
 
 router.patch(
