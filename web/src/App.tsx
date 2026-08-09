@@ -19,6 +19,7 @@ import {
   IconMenu,
   IconClose,
 } from "./icons";
+import { Cpu } from "lucide-react";
 
 interface Organization {
   id: string;
@@ -67,7 +68,6 @@ export default function App() {
     loadOrgs();
   }, [authed]);
 
-  // Projects are scoped to the selected organization.
   useEffect(() => {
     if (!authed || !orgId) {
       setProjects([]);
@@ -141,126 +141,210 @@ export default function App() {
   const myOrgRole = orgs.find((o) => o.id === orgId)?.role ?? "member";
 
   return (
-    <div className="shell">
-      <aside className={`sidebar ${navOpen ? "open" : ""}`}>
-        <div className="brand">
-          <span className="mark">
-            <IconOverview size={14} />
-          </span>
-          <span className="name">Scheduler</span>
-          <button className="nav-close ghost sm" onClick={() => setNavOpen(false)}>
-            <IconClose size={16} />
+    <div className="flex h-screen bg-background w-full">
+      {/* Sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 transform flex flex-col bg-card border-r border-border transition-transform duration-200 ease-in-out lg:relative lg:translate-x-0 ${
+          navOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex items-center justify-between p-5 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Cpu className="h-5 w-5" />
+            </div>
+            <span className="font-bold tracking-tight text-foreground text-lg">Scheduler</span>
+          </div>
+          <button
+            className="lg:hidden p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => setNavOpen(false)}
+          >
+            <IconClose size={20} />
           </button>
         </div>
 
-        <nav className="nav">
-          <div className="nav-label">Workspace</div>
-          {TABS.map(({ key, icon: Icon }) => (
-            <button
-              key={key}
-              className={`nav-item ${tab === key ? "active" : ""}`}
-              onClick={() => selectTab(key)}
-            >
-              <Icon size={17} />
-              {key}
-            </button>
-          ))}
+        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+          <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 px-3">
+            Workspace
+          </div>
+          {TABS.map(({ key, icon: Icon }) => {
+            const isActive = tab === key;
+            return (
+              <button
+                key={key}
+                onClick={() => selectTab(key)}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                  isActive
+                    ? "bg-secondary text-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                }`}
+              >
+                <span className={`${isActive ? "text-primary" : "text-muted-foreground"} transition-colors`}>
+                  <Icon size={18} />
+                </span>
+                {key}
+              </button>
+            );
+          })}
         </nav>
 
-        <div className="sidebar-footer">
-          <div className="user-row">
-            <div className="avatar">{email.slice(0, 1).toUpperCase() || "U"}</div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>
-                {email || "user"}
-              </div>
-              <div style={{ fontSize: 11, color: "var(--text-faint)", textTransform: "capitalize" }}>{myRole}</div>
+        <div className="border-t border-border p-4 bg-card/50">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary border border-border text-sm font-bold text-foreground">
+              {email.slice(0, 1).toUpperCase() || "U"}
             </div>
-            <button className="ghost sm" onClick={logout} title="Log out">
-              <IconLogout size={15} />
+            <div className="flex flex-1 flex-col overflow-hidden">
+              <span className="truncate text-sm font-semibold text-foreground">
+                {email || "user"}
+              </span>
+              <span className="text-xs font-medium text-muted-foreground capitalize">
+                {myRole}
+              </span>
+            </div>
+            <button
+              onClick={logout}
+              className="rounded-md p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+              title="Log out"
+            >
+              <IconLogout size={18} />
             </button>
           </div>
         </div>
       </aside>
 
-      <main className="main">
-        <header className="topbar">
-          <div className="topbar-title">
-            <button className="hamburger" onClick={() => setNavOpen(true)}>
-              <IconMenu size={17} />
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Topbar */}
+        <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border bg-card/50 px-6 backdrop-blur-sm">
+          <div className="flex items-center gap-4">
+            <button
+              className="lg:hidden -ml-2 p-2 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setNavOpen(true)}
+            >
+              <IconMenu size={20} />
             </button>
-            <div>
-              <h1>{tab}</h1>
-              <div className="sub">{current.sub}</div>
+            <div className="hidden sm:block">
+              <h1 className="text-lg font-bold text-foreground tracking-tight m-0">{tab}</h1>
+              <div className="text-xs font-medium text-muted-foreground mt-0.5">{current.sub}</div>
             </div>
           </div>
-          <div className="topbar-actions">
-            <span className={`live-indicator ${live ? "live" : ""}`} title={live ? "Live updates connected" : "Reconnecting…"}>
-              <span className="dot" />
+
+          <div className="flex items-center gap-3">
+            <div
+              className={`hidden sm:flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${
+                live ? "bg-emerald-500/10 text-emerald-600" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              <span className={`relative flex h-2 w-2`}>
+                {live && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>}
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${live ? "bg-emerald-500" : "bg-muted-foreground"}`}></span>
+              </span>
               {live ? "Live" : "Reconnecting"}
-            </span>
-            <select value={orgId} onChange={(e) => setOrgId(e.target.value)} title="Organization">
+            </div>
+
+            <div className="h-6 w-px bg-border hidden md:block mx-1"></div>
+
+            <select
+              value={orgId}
+              onChange={(e) => setOrgId(e.target.value)}
+              className="h-9 rounded-md border border-border bg-background px-3 py-1 text-sm font-medium text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-sm"
+            >
               {orgs.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.name} ({o.project_count})
                 </option>
               ))}
-              {orgs.length === 0 && <option>no organizations</option>}
+              {orgs.length === 0 && <option>No Orgs</option>}
             </select>
-            <input
-              placeholder="new org"
-              value={newOrg}
-              onChange={(e) => setNewOrg(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && createOrg()}
-              style={{ width: 96 }}
-            />
-            <button className="ghost" onClick={createOrg} title="Create organization">
-              <IconPlus size={15} />
-            </button>
-            <span className="topbar-divider" />
-            <select value={projectId} onChange={(e) => setProjectId(e.target.value)} title="Project">
+            <div className="flex items-center gap-1">
+              <input
+                placeholder="New Org"
+                value={newOrg}
+                onChange={(e) => setNewOrg(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && createOrg()}
+                className="h-9 w-24 rounded-md border border-border bg-background px-3 py-1 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-sm hidden md:block"
+              />
+              <button
+                onClick={createOrg}
+                className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors hidden md:flex"
+                title="Create organization"
+              >
+                <IconPlus size={16} />
+              </button>
+            </div>
+
+            <div className="h-6 w-px bg-border hidden md:block mx-1"></div>
+
+            <select
+              value={projectId}
+              onChange={(e) => setProjectId(e.target.value)}
+              className="h-9 rounded-md border border-border bg-background px-3 py-1 text-sm font-medium text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-sm"
+            >
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>
               ))}
-              {projects.length === 0 && <option>no projects</option>}
+              {projects.length === 0 && <option>No Projects</option>}
             </select>
-            <input
-              placeholder="new project"
-              value={newProject}
-              onChange={(e) => setNewProject(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && createProject()}
-              style={{ width: 120 }}
-            />
-            <button className="primary" onClick={createProject}>
-              <IconPlus size={15} />
-              <span className="btn-label">Add</span>
-            </button>
+            
+            <div className="flex items-center gap-2">
+              <input
+                placeholder="New Project"
+                value={newProject}
+                onChange={(e) => setNewProject(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && createProject()}
+                className="h-9 w-28 rounded-md border border-border bg-background px-3 py-1 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-sm hidden lg:block"
+              />
+              <button
+                onClick={createProject}
+                className="flex h-9 items-center gap-2 rounded-md bg-primary px-3 py-1 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
+              >
+                <IconPlus size={16} />
+                <span className="hidden xl:inline">Add</span>
+              </button>
+            </div>
           </div>
         </header>
 
-        <div className="page">
-          {!projectId ? (
-            <div className="panel">
-              <div className="empty">Create a project above to get started.</div>
-            </div>
-          ) : tab === "Overview" ? (
-            <Overview />
-          ) : tab === "Queues" ? (
-            <Queues projectId={projectId} myRole={myRole} />
-          ) : tab === "Jobs" ? (
-            <Jobs projectId={projectId} myRole={myRole} />
-          ) : tab === "Workers" ? (
-            <Workers />
-          ) : (
-            <>
-              {orgId && <OrgMembers orgId={orgId} myOrgRole={myOrgRole} />}
-              <Members projectId={projectId} myRole={myRole} />
-            </>
-          )}
+        {/* Scrollable Page Content */}
+        <div className="flex-1 overflow-auto p-6">
+          <div className="mx-auto max-w-6xl w-full">
+            {!projectId ? (
+              <div className="flex h-[400px] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card text-center shadow-sm">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                  <IconJobs size={24} />
+                </div>
+                <h3 className="mb-1 text-lg font-bold text-foreground">No Project Selected</h3>
+                <p className="text-sm font-medium text-muted-foreground max-w-[250px]">
+                  Create a new project using the input field in the top navigation bar to get started.
+                </p>
+              </div>
+            ) : tab === "Overview" ? (
+              <Overview />
+            ) : tab === "Queues" ? (
+              <Queues projectId={projectId} myRole={myRole} />
+            ) : tab === "Jobs" ? (
+              <Jobs projectId={projectId} myRole={myRole} />
+            ) : tab === "Workers" ? (
+              <Workers />
+            ) : (
+              <div className="space-y-6">
+                {orgId && <OrgMembers orgId={orgId} myOrgRole={myOrgRole} />}
+                <Members projectId={projectId} myRole={myRole} />
+              </div>
+            )}
+          </div>
         </div>
       </main>
+      
+      {/* Mobile overlay */}
+      {navOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm lg:hidden transition-opacity"
+          onClick={() => setNavOpen(false)}
+        />
+      )}
     </div>
   );
 }

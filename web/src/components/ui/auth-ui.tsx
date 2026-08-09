@@ -228,7 +228,7 @@ interface AuthUIProps {
 
 const defaultSignInContent = {
     image: {
-        src: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2069&auto=format&fit=crop",
+        src: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=2000&auto=format&fit=crop",
         alt: "A beautiful interior design for sign-in"
     },
     quote: {
@@ -239,7 +239,7 @@ const defaultSignInContent = {
 
 const defaultSignUpContent = {
     image: {
-        src: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop",
+        src: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=2000&auto=format&fit=crop",
         alt: "A vibrant, modern space for new beginnings"
     },
     quote: {
